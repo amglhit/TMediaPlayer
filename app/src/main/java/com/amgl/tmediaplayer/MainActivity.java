@@ -3,21 +3,25 @@ package com.amgl.tmediaplayer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.SurfaceView;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.amgl.mediaplayer.TMediaPlayer;
+import com.amgl.mediaplayer.controller.TPlayerController;
+import com.amgl.mediaplayer.player.LifecyclePlayer;
+import com.amgl.mediaplayer.player.TMediaPlayer;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String URL = "http://220.181.117.183/187/28/92/letv-gug/14/ver_00_22-1051581402-avc-1507856-aac-96000-117151-23680505-2e0b3774490e51ac469db4313025b877-1466497857703.m3u8?crypt=13aa7f2e16900&b=169&nlh=4096&nlt=60&bf=8000&p2p=1&video_type=mp4&termid=0&tss=ios&platid=15&splatid=1502&its=0&qos=5&fcheck=0&amltag=8800&mltag=8800&proxy=1778917254&uid=172698987.rp&keyitem=GOw_33YJAAbXYE-cnQwpfLlv_b2zAkYctFVqe5bsXQpaGNn3T1-vhw..&ntm=1493824200&nkey=1c416d5954e75e583aebcd8526e09e00&nkey2=435a49d23766f73fd99587148ecbfb2f&geo=CN-1-7-666&mmsid=62824553&tm=1487400909&key=9a852aac5fe3a75d50ecea606f2fe34d&playid=0&vtype=58&cvid=719159742449&payff=0&errc=429&gn=820&vrtmcd=106&buss=8800&cips=10.75.45.107";
+    private static final String URL = "http://101.28.249.57/v.cctv.com/flash/mp4video6/TMS/2011/01/05/cf752b1c12ce452b3040cab2f90bc265_h264818000nero_aac32-1.mp4?wsiphost=local";
 
     @BindView(R.id.surface_view)
     SurfaceView mSurfaceView;
+
+    @BindView(R.id.surface_view_2)
+    SurfaceView mSurfaceView2;
 
     @BindView(R.id.btn_prepare)
     Button mBtnPrepare;
@@ -28,7 +32,12 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.text_position)
     TextView mTextPosition;
 
+    @BindView(R.id.view_controller)
+    TPlayerController mTPlayerController;
+
     private TMediaPlayer mMediaPlayer;
+
+    private LifecyclePlayer mLifecycleWrapper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,17 +48,38 @@ public class MainActivity extends AppCompatActivity {
 
         mMediaPlayer = new TMediaPlayer();
 
-        mBtnPrepare.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startPlay();
-            }
-        });
+        mLifecycleWrapper = new LifecyclePlayer();
+        mLifecycleWrapper.onCreate(mMediaPlayer);
+
+        mTPlayerController.setPlayer(mMediaPlayer);
     }
 
-    private void startPlay() {
-        mMediaPlayer.prepare(URL);
-        mMediaPlayer.setDisplay(mSurfaceView.getHolder());
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mLifecycleWrapper.onDestroy();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mLifecycleWrapper.onShow();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mLifecycleWrapper.onHide();
+    }
+
+    @OnClick(R.id.btn_init)
+    void init() {
+        mMediaPlayer.setDataSource(URL);
+    }
+
+    @OnClick(R.id.btn_prepare)
+    void prepare() {
+        mMediaPlayer.prepare();
     }
 
     @OnClick(R.id.btn_start)
@@ -69,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.btn_resume)
     void resume() {
-        mMediaPlayer.resume();
+        mMediaPlayer.resume(true);
     }
 
     @OnClick(R.id.btn_release)
@@ -92,5 +122,24 @@ public class MainActivity extends AppCompatActivity {
     void getDuration() {
         int duration = mMediaPlayer.getDuration();
         mTextDuration.setText("total: " + duration);
+    }
+
+    @OnClick(R.id.btn_seek)
+    void seek() {
+        int from = mMediaPlayer.getCurrentPosition();
+        int total = mMediaPlayer.getDuration();
+        int to = Math.min(from + 1000, total);
+
+        mMediaPlayer.seekTo(to, false);
+    }
+
+    @OnClick(R.id.btn_display_1)
+    void display1() {
+        mLifecycleWrapper.setSurfaceView(mSurfaceView);
+    }
+
+    @OnClick(R.id.btn_display_2)
+    void display2() {
+        mLifecycleWrapper.setSurfaceView(mSurfaceView2);
     }
 }

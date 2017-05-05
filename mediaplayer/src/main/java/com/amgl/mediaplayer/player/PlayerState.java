@@ -1,4 +1,4 @@
-package com.amgl.mediaplayer;
+package com.amgl.mediaplayer.player;
 
 /**
  * Created by 阿木 on 2017/5/3.
@@ -6,14 +6,13 @@ package com.amgl.mediaplayer;
 
 public enum PlayerState {
     IDLE,
+    INITIALIZED,
     PREPARING,
     PREPARED,
     STARTED,
-    PLAYING,
     PAUSED,
     STOPPED,
     COMPLETE,
     RELEASED,
-    ERROR,
-    BUFFERING
+    ERROR
 }

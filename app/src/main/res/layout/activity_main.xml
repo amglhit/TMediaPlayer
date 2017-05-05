@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.percent.PercentFrameLayout
+<android.support.percent.PercentRelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -7,82 +7,136 @@
     android:layout_height="match_parent"
     tools:context="com.amgl.tmediaplayer.MainActivity">
 
+    <FrameLayout android:id="@+id/view_top"
+                 android:layout_alignParentTop="true"
+                 android:layout_gravity="top"
+                 app:layout_aspectRatio="178%"
+                 app:layout_widthPercent="100%">
+        <SurfaceView
+            android:id="@+id/surface_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+        />
+        <com.amgl.mediaplayer.controller.TPlayerController
+            android:id="@+id/view_controller"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+        </com.amgl.mediaplayer.controller.TPlayerController>
+    </FrameLayout>
+
+
     <SurfaceView
-        android:id="@+id/surface_view"
+        android:id="@+id/surface_view_2"
+        android:layout_below="@id/view_top"
         android:layout_gravity="top"
+        android:layout_marginTop="2dp"
         app:layout_aspectRatio="178%"
         app:layout_widthPercent="100%"
     />
 
     <android.support.v4.widget.NestedScrollView android:layout_width="match_parent"
                                                 android:layout_height="match_parent"
-                                                android:layout_marginTop="230dp">
+                                                android:layout_below="@id/view_top">
+
         <LinearLayout android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
-                      android:orientation="vertical">
-            <Button android:id="@+id/btn_prepare"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|left"
-                    android:text="prepare"/>
-            <Button android:id="@+id/btn_start"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|left"
-                    android:text="start"/>
-            <Button android:id="@+id/btn_stop"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|left"
-                    android:text="stop"/>
-            <Button android:id="@+id/btn_pause"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|left"
-                    android:text="pause"/>
-            <Button android:id="@+id/btn_resume"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|left"
-                    android:text="resume"/>
-            <Button android:id="@+id/btn_release"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|left"
-                    android:text="release"/>
-            <Button android:id="@+id/btn_duration"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|left"
-                    android:text="duration"/>
-            <Button android:id="@+id/btn_position"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|left"
-                    android:text="position"/>
-            <Button android:id="@+id/btn_reset"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|left"
-                    android:text="reset"/>
+                      android:layout_height="wrap_content" android:orientation="horizontal">
+            <LinearLayout android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:orientation="vertical">
+                <Button android:id="@+id/btn_init"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|left"
+                        android:text="init"/>
+                <Button android:id="@+id/btn_prepare"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|left"
+                        android:text="prepare"/>
+
+                <Button android:id="@+id/btn_release"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|left"
+                        android:text="release"/>
+
+                <Button android:id="@+id/btn_reset"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|left"
+                        android:text="reset"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:orientation="vertical">
+                <Button android:id="@+id/btn_start"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|left"
+                        android:text="start"/>
+                <Button android:id="@+id/btn_stop"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|left"
+                        android:text="stop"/>
+                <Button android:id="@+id/btn_pause"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|left"
+                        android:text="pause"/>
+                <Button android:id="@+id/btn_resume"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|left"
+                        android:text="resume"/>
+                <Button android:id="@+id/btn_seek"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|left"
+                        android:text="seek"/>
+                <Button android:id="@+id/btn_duration"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|left"
+                        android:text="duration"/>
+                <TextView android:id="@+id/text_duration"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:layout_margin="8dp" android:text="duration"
+                          android:textSize="16sp"/>
+                <Button android:id="@+id/btn_position"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|left"
+                        android:text="position"/>
+
+                <TextView android:id="@+id/text_position"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:layout_margin="8dp"
+                          android:text="position"
+                          android:textSize="16sp"/>
+
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:orientation="vertical">
+                <Button android:id="@+id/btn_display_1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|left"
+                        android:text="display-1"/>
+                <Button android:id="@+id/btn_display_2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|left"
+                        android:text="display-2"/>
+            </LinearLayout>
         </LinearLayout>
     </android.support.v4.widget.NestedScrollView>
 
-    <LinearLayout android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:layout_gravity="bottom"
-                  android:gravity="right" android:orientation="vertical">
-        <TextView android:id="@+id/text_duration"
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:layout_margin="8dp" android:text="duration"
-                  android:textSize="16sp"/>
-        <TextView android:id="@+id/text_position"
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:layout_margin="8dp"
-                  android:text="position"
-                  android:textSize="16sp"/>
 
-    </LinearLayout>
-</android.support.percent.PercentFrameLayout>
+</android.support.percent.PercentRelativeLayout>
