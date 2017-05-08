@@ -28,6 +28,8 @@ public interface IPlayer {
 
     void prepare();
 
+    void prepare(int startPosition);
+
     void start();
 
     void stop();

@@ -49,6 +49,8 @@ public class TMediaPlayer implements IPlayer {
     private int mBufferingPercent = 0;
     private boolean mIsBuffering = false;
 
+    private int mStartPosition = 0;
+
     private final List<IPlayerListener> mPlayerListeners = new ArrayList<>();
 
     private final List<IOnPreparedListener> mOnPreparedListeners = new ArrayList<>();
@@ -231,9 +233,8 @@ public class TMediaPlayer implements IPlayer {
         prepare(0);
     }
 
-    private int mStartPosition = 0;
-
-    private void prepare(int startPosition) {
+    @Override
+    public void prepare(int startPosition) {
         final PlayerState state = getPlayerState();
         Timber.d("prepare, current: " + state);
         switch (state) {
@@ -440,7 +441,7 @@ public class TMediaPlayer implements IPlayer {
             case PAUSED:
             case COMPLETE:
                 position = mMediaPlayer.getCurrentPosition();
-                Timber.d("getCurrentPosition, state: %s;  position: %s", state, position);
+                Timber.v("getCurrentPosition, state: %s;  position: %s", state, position);
                 break;
             default:
                 Timber.d("getCurrentPosition, illegal state: %s", state);
@@ -459,7 +460,7 @@ public class TMediaPlayer implements IPlayer {
             case COMPLETE:
             case STOPPED:
                 duration = mMediaPlayer.getDuration();
-                Timber.d("getDuration, state: %s; duration: %s", state, duration);
+                Timber.v("getDuration, state: %s; duration: %s", state, duration);
                 break;
             default:
                 duration = 0;
