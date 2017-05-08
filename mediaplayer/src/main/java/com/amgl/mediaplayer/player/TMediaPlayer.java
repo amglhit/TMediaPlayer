@@ -3,6 +3,7 @@ package com.amgl.mediaplayer.player;
 import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
 import android.view.SurfaceHolder;
 
 import com.amgl.mediaplayer.IOnPreparedListener;
@@ -64,6 +65,7 @@ public class TMediaPlayer implements IPlayer {
             public void onPrepared(MediaPlayer mp) {
                 Timber.d("onPrepared");
                 setState(PlayerState.PREPARED);
+                notifyPrepareEnd(mStartPosition);
             }
         });
 
@@ -155,17 +157,11 @@ public class TMediaPlayer implements IPlayer {
             case PREPARING:
                 notifyPrepareStart();
                 break;
-            case PREPARED:
-                notifyPrepareEnd();
-                break;
             case STARTED:
                 notifyPlayStart();
                 break;
             case STOPPED:
                 notifyPlayStop();
-                break;
-            case PAUSED:
-                notifyPlayPaused();
                 break;
             case ERROR:
                 notifyError();
@@ -198,7 +194,7 @@ public class TMediaPlayer implements IPlayer {
         if (position >= 0) {
             notifyProgress(position);
         }
-        Timber.d("update position: " + position);
+        Timber.v("update position: " + position);
         mHandler.postDelayed(mRunnablePositionUpdate, 1000);
     }
 
@@ -207,6 +203,8 @@ public class TMediaPlayer implements IPlayer {
         mHandler.removeCallbacks(mRunnablePositionUpdate);
     }
 
+    private String mUrl = "";
+
     @Override
     public void setDataSource(String url) {
         final PlayerState state = getPlayerState();
@@ -214,6 +212,7 @@ public class TMediaPlayer implements IPlayer {
         switch (state) {
             case IDLE:
                 try {
+                    mUrl = url;
                     mMediaPlayer.setDataSource(url);
                     setState(PlayerState.INITIALIZED);
                 } catch (IOException e) {
@@ -229,11 +228,19 @@ public class TMediaPlayer implements IPlayer {
 
     @Override
     public void prepare() {
+        prepare(0);
+    }
+
+    private int mStartPosition = 0;
+
+    private void prepare(int startPosition) {
         final PlayerState state = getPlayerState();
         Timber.d("prepare, current: " + state);
         switch (state) {
             case STOPPED:
             case INITIALIZED:
+                mStartPosition = startPosition;
+                mMediaPlayer.setScreenOnWhilePlaying(true);
                 mMediaPlayer.setLooping(false);
                 mMediaPlayer.prepareAsync();
                 setState(PlayerState.PREPARING);
@@ -243,6 +250,11 @@ public class TMediaPlayer implements IPlayer {
         }
     }
 
+    @Override
+    public String getUrl() {
+        return mUrl;
+    }
+
     //TODO: 异常状态时重新开始
     @Override
     public void restart(boolean fromStart) {
@@ -250,25 +262,33 @@ public class TMediaPlayer implements IPlayer {
         final PlayerState state = getPlayerState();
         switch (state) {
             case INITIALIZED:
-//                prepare();
+                prepare();
                 Timber.d("prepare");
                 break;
             case PAUSED:
             case STOPPED:
-//                resume(true);
+                resume(true);
                 Timber.d("resume");
                 break;
             case COMPLETE:
-//                start();
-                Timber.d("start");
+                Timber.d("do nothing");
                 break;
             case RELEASED:
-            case IDLE:
                 Timber.d("do nothing");
+                break;
+            case IDLE:
+                if (!TextUtils.isEmpty(mUrl)) {
+                    setDataSource(mUrl);
+                    prepare();
+                    Timber.d("reload url: %s", mUrl);
+                } else {
+                    Timber.d("do nothing");
+                }
                 break;
             case ERROR:
                 Timber.d("reset");
-//                reset();
+                reset();
+                restart(true);
 //                prepare();
                 break;
         }
@@ -282,6 +302,7 @@ public class TMediaPlayer implements IPlayer {
             case PREPARED:
             case PAUSED:
             case COMPLETE:
+                mMediaPlayer.setScreenOnWhilePlaying(true);
                 mMediaPlayer.start();
                 startPositionUpdate();
                 setState(PlayerState.STARTED);
@@ -303,6 +324,7 @@ public class TMediaPlayer implements IPlayer {
             case PAUSED:
                 saveCurrentPosition();
                 stopPositionUpdate();
+                mMediaPlayer.setScreenOnWhilePlaying(false);
                 mMediaPlayer.stop();
                 setState(PlayerState.STOPPED);
                 break;
@@ -318,8 +340,10 @@ public class TMediaPlayer implements IPlayer {
         if (state == PlayerState.STARTED) {
             saveCurrentPosition();
             stopPositionUpdate();
+            mMediaPlayer.setScreenOnWhilePlaying(false);
             mMediaPlayer.pause();
             setState(PlayerState.PAUSED);
+            notifyPlayPaused();
         } else {
             Timber.w("pause, illegal state: " + state);
         }
@@ -331,7 +355,6 @@ public class TMediaPlayer implements IPlayer {
         Timber.d("resume, current: " + state);
         switch (state) {
             case PAUSED:
-            case STOPPED:
                 int position = getRestorePosition();
                 if (position > 0) {
                     seekTo(position, autoStart);
@@ -354,6 +377,8 @@ public class TMediaPlayer implements IPlayer {
         stopPositionUpdate();
         final PlayerState state = getPlayerState();
         Timber.d("release, current: " + state);
+        mUrl = null;
+        mMediaPlayer.setScreenOnWhilePlaying(false);
         mMediaPlayer.release();
         setState(PlayerState.RELEASED);
 
@@ -364,16 +389,19 @@ public class TMediaPlayer implements IPlayer {
         mMediaPlayer.setOnBufferingUpdateListener(null);
         mMediaPlayer.setOnVideoSizeChangedListener(null);
         mMediaPlayer.setOnSeekCompleteListener(null);
+
+        mMediaPlayer = null;
     }
 
     @Override
     public void reset() {
         final PlayerState state = getPlayerState();
         Timber.d("reset, current: " + state);
-        if (state == PlayerState.RELEASED) {
+        if (state == PlayerState.RELEASED || mMediaPlayer == null) {
             Timber.w("reset, illegal state: " + state);
             initMediaPlayer();
         } else {
+            mMediaPlayer.setScreenOnWhilePlaying(false);
             mMediaPlayer.reset();
         }
 
@@ -553,11 +581,11 @@ public class TMediaPlayer implements IPlayer {
         }
     }
 
-    private void notifyPrepareEnd() {
+    private void notifyPrepareEnd(int position) {
         synchronized (mOnPreparedListeners) {
             for (IOnPreparedListener listener : mOnPreparedListeners) {
                 try {
-                    listener.onPrepared();
+                    listener.onPrepared(position);
                 } catch (Exception e) {
                     e.printStackTrace();
                     Timber.w(e.getMessage());

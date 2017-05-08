@@ -7,6 +7,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.amgl.mediaplayer.controller.TPlayerController;
+import com.amgl.mediaplayer.player.IPlayer;
 import com.amgl.mediaplayer.player.LifecyclePlayer;
 import com.amgl.mediaplayer.player.TMediaPlayer;
 
@@ -35,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.view_controller)
     TPlayerController mTPlayerController;
 
-    private TMediaPlayer mMediaPlayer;
+    private IPlayer mMediaPlayer;
 
     private LifecyclePlayer mLifecycleWrapper;
 
@@ -46,10 +47,10 @@ public class MainActivity extends AppCompatActivity {
 
         ButterKnife.bind(this);
 
-        mMediaPlayer = new TMediaPlayer();
-
         mLifecycleWrapper = new LifecyclePlayer();
-        mLifecycleWrapper.onCreate(mMediaPlayer);
+        mLifecycleWrapper.onCreate();
+
+        mMediaPlayer = mLifecycleWrapper.getPlayer();
 
         mTPlayerController.setPlayer(mMediaPlayer);
     }
@@ -63,13 +64,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        mLifecycleWrapper.onShow();
+        mLifecycleWrapper.onStart();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        mLifecycleWrapper.onHide();
+        mLifecycleWrapper.onStop();
     }
 
     @OnClick(R.id.btn_init)

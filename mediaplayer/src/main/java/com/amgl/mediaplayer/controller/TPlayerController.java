@@ -15,6 +15,7 @@ import android.widget.TextView;
 import com.amgl.mediaplayer.IOnPreparedListener;
 import com.amgl.mediaplayer.IPlayerListener;
 import com.amgl.mediaplayer.R;
+import com.amgl.mediaplayer.player.IPlayer;
 import com.amgl.mediaplayer.player.TMediaPlayer;
 
 import timber.log.Timber;
@@ -69,7 +70,7 @@ public class TPlayerController extends FrameLayout implements IPlayerController 
         });
     }
 
-    public void setPlayer(TMediaPlayer player) {
+    public void setPlayer(IPlayer player) {
         if (mPlayer != null) {
             mPlayer.removePlayerListener(mPlayerListener);
             mPlayer.removeOnPreparedListener(mOnPreparedListener);
@@ -99,11 +100,11 @@ public class TPlayerController extends FrameLayout implements IPlayerController 
     private View mViewBuffering;
     private TextView mTextBuffering;
 
-    private TMediaPlayer mPlayer;
+    private IPlayer mPlayer;
 
     private IOnPreparedListener mOnPreparedListener = new IOnPreparedListener() {
         @Override
-        public void onPrepared() {
+        public void onPrepared(int startPosition) {
             mViewLoading.setVisibility(GONE);
             mViewBottomControl.setVisibility(VISIBLE);
             mViewTopControl.setVisibility(VISIBLE);
@@ -119,7 +120,9 @@ public class TPlayerController extends FrameLayout implements IPlayerController 
     private IPlayerListener mPlayerListener = new IPlayerListener() {
         @Override
         public void onBuffering(int percent) {
-            mTextBuffering.setText(percent + "%");
+            if (mViewBuffering.getVisibility() == VISIBLE) {
+                mTextBuffering.setText(percent + "%");
+            }
         }
 
         @Override
@@ -135,6 +138,8 @@ public class TPlayerController extends FrameLayout implements IPlayerController 
         @Override
         public void onError() {
             updatePlayBtn(false);
+            mViewLoading.setVisibility(GONE);
+            mViewBuffering.setVisibility(GONE);
         }
 
         @Override

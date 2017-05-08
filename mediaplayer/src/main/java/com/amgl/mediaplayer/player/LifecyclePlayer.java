@@ -74,12 +74,9 @@ public class LifecyclePlayer {
         }
     };
 
-    public void onCreate(IPlayer player) {
+    public void onCreate() {
         Timber.d("on create");
-        releasePlayer();
-        mPlayer = player;
-        mPlayer.addPlayerListener(mPlayerListener);
-        mPlayer.addOnPreparedListener(mOnPreparedListener);
+        initPlayer();
     }
 
     public void onDestroy() {
@@ -87,9 +84,20 @@ public class LifecyclePlayer {
         releasePlayer();
     }
 
+    public void onStart() {
+        Timber.d("on start");
+        isVisible = true;
+    }
+
+    public void onStop() {
+        Timber.d("on stop");
+        isVisible = false;
+    }
+
     public void onHide() {
         Timber.d("on hide");
         isVisible = false;
+        releasePlayer();
 //        if (mPlayer != null) {
 //            savePlayerState();
 //        }
@@ -105,8 +113,8 @@ public class LifecyclePlayer {
 
     private IOnPreparedListener mOnPreparedListener = new IOnPreparedListener() {
         @Override
-        public void onPrepared() {
-            LifecyclePlayer.this.onPrepared();
+        public void onPrepared(int startPosition) {
+            LifecyclePlayer.this.onPrepared(mLastPosition);
         }
 
         @Override
@@ -118,12 +126,12 @@ public class LifecyclePlayer {
     private IPlayerListener mPlayerListener = new IPlayerListener() {
         @Override
         public void onBuffering(int percent) {
-            Timber.d("on buffering: %s", percent);
+            Timber.v("on buffering: %s", percent);
         }
 
         @Override
         public void onProgress(int progress) {
-            Timber.d("on progress: %s", progress);
+            Timber.v("on progress: %s", progress);
         }
 
         @Override
@@ -254,7 +262,17 @@ public class LifecyclePlayer {
         }
     }
 
-    private void onPrepared() {
+    private void initPlayer() {
+        if (mPlayer != null) {
+            releasePlayer();
+        }
+
+        mPlayer = new TMediaPlayer();
+        mPlayer.addOnPreparedListener(mOnPreparedListener);
+        mPlayer.addPlayerListener(mPlayerListener);
+    }
+
+    private void onPrepared(int startPosition) {
         if (mPlayer == null)
             return;
 
@@ -264,22 +282,22 @@ public class LifecyclePlayer {
         Timber.d("on prepared, preStat:%s, currentStat:%s", mLastState, mLastPosition);
 
         if (mLastState == PlayerState.PAUSED) {
-            if (mLastPosition > 0) {
+            if (startPosition > 0) {
                 mPlayer.seekTo(mLastPosition, false);
             }
         } else if (mLastState == PlayerState.STARTED) {
-            if (mLastPosition > 0) {
+            if (startPosition > 0) {
                 mPlayer.seekTo(mLastPosition, true);
             }
         } else if (mLastState == PlayerState.STOPPED || mLastState == PlayerState.COMPLETE) {
             Timber.d("do nothing");
         } else if (mLastState == PlayerState.IDLE || mLastState == PlayerState.PREPARED) {
-            //第一次播放时prepare
+            //第一次播放时（IDLE）或者退出时状态为prepared时。
             Timber.d("start");
             mPlayer.start();
         } else {
             Timber.d("start on prepared");
-            mPlayer.restart(false);
+//            mPlayer.restart(false);
         }
     }
 

@@ -5,7 +5,7 @@ package com.amgl.mediaplayer;
  */
 
 public interface IOnPreparedListener {
-    void onPrepared();
+    void onPrepared(int startPosition);
 
     void onPrepareStart();
 }

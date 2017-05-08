@@ -12,6 +12,8 @@ import com.amgl.mediaplayer.player.PlayerState;
  */
 
 public interface IPlayer {
+    String getUrl();
+
     void restart(boolean fromStart);
 
     void addPlayerListener(IPlayerListener listener);
