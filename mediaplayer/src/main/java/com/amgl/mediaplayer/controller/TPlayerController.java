@@ -16,6 +16,7 @@ import com.amgl.mediaplayer.IOnPreparedListener;
 import com.amgl.mediaplayer.IPlayerListener;
 import com.amgl.mediaplayer.R;
 import com.amgl.mediaplayer.player.IPlayer;
+import com.amgl.mediaplayer.player.PlayerState;
 import com.amgl.mediaplayer.player.TMediaPlayer;
 
 import timber.log.Timber;
@@ -56,18 +57,27 @@ public class TPlayerController extends FrameLayout implements IPlayerController 
         mImagePlay.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mPlayer != null) {
-                    if (mPlayer.isPlaying()) {
-                        mPlayer.pause();
-                    } else if (mPlayer.isPaused()) {
-                        mPlayer.resume(true);
-                    } else {
-                        Timber.w("restart, %s", mPlayer.getPlayerState());
-                        mPlayer.restart(false);
-                    }
-                }
+                playOrPause();
             }
         });
+    }
+
+    private void playOrPause() {
+        if (mPlayer != null) {
+            final boolean isPlaying = mPlayer.isPlaying();
+            final boolean isPaused = mPlayer.isPaused() || mPlayer.getPlayerState() == PlayerState.PREPARED;
+            final boolean isCanPlayback = mPlayer.isCanPlayback();
+            if (isPlaying) {
+                mPlayer.pause();
+            } else if (isPaused) {
+                mPlayer.start();
+            } else if (isCanPlayback) {
+                Timber.w("restart, %s", mPlayer.getPlayerState());
+                mPlayer.restart(false);
+            } else {
+                Timber.w("do nothing");
+            }
+        }
     }
 
     public void setPlayer(IPlayer player) {
@@ -205,10 +215,8 @@ public class TPlayerController extends FrameLayout implements IPlayerController 
         Timber.d("update play btn: %s", isPlaying);
         if (isPlaying) {
             mImagePlay.setImageResource(R.drawable.ic_player_pause);
-            mImagePlay.invalidate();
         } else {
             mImagePlay.setImageResource(R.drawable.ic_player_play);
-            mImagePlay.invalidate();
         }
     }
 }

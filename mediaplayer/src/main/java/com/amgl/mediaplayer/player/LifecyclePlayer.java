@@ -17,12 +17,14 @@ import timber.log.Timber;
 public class LifecyclePlayer {
     private IPlayer mPlayer;
     private boolean isVisible = false;
-    private int mLastPosition = 0;
-    private String mLastUrl = "";
+
+    private PlayerData mPlayerData;
 
     private SurfaceHolder mSurfaceHolder;
 
-    private PlayerState mLastState = PlayerState.IDLE;
+//    private int mLastPosition = 0;
+//    private String mLastUrl = "";
+//    private PlayerState mLastState = PlayerState.IDLE;
 
     public void setSurfaceView(SurfaceView surfaceView) {
         Timber.d("set surface view: %s", surfaceView.getId());
@@ -70,7 +72,6 @@ public class LifecyclePlayer {
             mSurfaceHolder = null;
             if (mPlayer != null) {
                 mPlayer.setDisplay(null);
-//                holder.setKeepScreenOn(false);
 //                savePlayerState();
             }
         }
@@ -81,6 +82,8 @@ public class LifecyclePlayer {
         initPlayer();
     }
 
+    private boolean mIsNeedRestoreState = false;
+
     public void onDestroy() {
         Timber.d("on destroy");
         releasePlayer();
@@ -89,40 +92,32 @@ public class LifecyclePlayer {
     public void onStart() {
         Timber.d("on start");
         isVisible = true;
-        restorePlayerState();
+
+        if (mPlayer != null && mPlayerData != null && (mPlayerData.playerState == PlayerState.RELEASED || mPlayerData.playerState == PlayerState.IDLE)) {
+            Timber.d("reset player: %s", mPlayerData.playerState);
+            mPlayer.reset();
+        }
+
+        if (mPlayer != null && mPlayerData != null && mPlayerData.needRestore) {
+            restorePlayerState(mPlayerData, mPlayer);
+        }
     }
 
     public void onStop() {
         Timber.d("on stop");
         isVisible = false;
         if (mPlayer != null) {
-            savePlayerState();
-            mPlayer.stop();
+            mPlayerData = savePlayerState(mPlayer);
             mPlayer.release();
         }
-    }
-
-    public void onHide() {
-        Timber.d("on hide");
-        isVisible = false;
-        releasePlayer();
-//        if (mPlayer != null) {
-//            savePlayerState();
-//        }
-    }
-
-    public void onShow() {
-        Timber.d("on show");
-        isVisible = true;
-//        if (mPlayer != null) {
-//            restorePlayerState();
-//        }
     }
 
     private IOnPreparedListener mOnPreparedListener = new IOnPreparedListener() {
         @Override
         public void onPrepared(int startPosition) {
-            LifecyclePlayer.this.onPrepared(startPosition);
+            if (mPlayer != null && isVisible) {
+                LifecyclePlayer.this.onPrepared(mPlayer, startPosition, mPlayerData != null ? mPlayerData.playerState : PlayerState.IDLE);
+            }
         }
 
         @Override
@@ -179,9 +174,14 @@ public class LifecyclePlayer {
 
         @Override
         public void onSeekComplete(boolean start) {
-            if (isVisible && start && mPlayer != null) {
-                Timber.d("start player on seek complete");
-                mPlayer.start();
+            if (isVisible && mPlayer != null) {
+                if (start) {
+                    Timber.d("start player on seek complete");
+                    mPlayer.start();
+                } else {
+                    Timber.d("pause player on seek complete");
+                    mPlayer.pause();
+                }
             }
         }
 
@@ -197,82 +197,93 @@ public class LifecyclePlayer {
     };
 
     /**
-     * 保存播放器状态
+     * 保存播放状态
+     *
+     * @return
      */
-    private void savePlayerState() {
-        if (mPlayer == null) {
-            mLastState = PlayerState.IDLE;
-            return;
+    private static PlayerData savePlayerState(IPlayer player) {
+        if (player == null) {
+            return null;
+        }
+        PlayerData playerData = new PlayerData();
+
+        final PlayerState state = player.getPlayerState();
+        playerData.playerState = state;
+
+        if (state == PlayerState.RELEASED || state == PlayerState.IDLE) {
+            return playerData;
         }
 
-        final PlayerState state = mPlayer.getPlayerState();
-
-        mLastState = state;
-
-        mLastUrl = mPlayer.getUrl();
+        playerData.url = player.getUrl();
 
         if (state == PlayerState.STARTED) {
-            mPlayer.pause();
-            mLastPosition = mPlayer.getCurrentPosition();
+            player.pause();
+            playerData.position = player.getCurrentPosition();
+            playerData.needRestore = true;
         } else if (state == PlayerState.PAUSED) {
-            mLastPosition = mPlayer.getCurrentPosition();
-        } else if (mPlayer.isCanPlayback()) {
-            mLastPosition = mPlayer.getCurrentPosition();
+            playerData.position = player.getCurrentPosition();
+            playerData.needRestore = true;
+        } else if (player.isCanPlayback()) {
+            playerData.position = player.getCurrentPosition();
+            playerData.needRestore = true;
         } else {
-            mLastPosition = 0;
+
         }
-        Timber.d("store player state on hide, state: %s, position: %s", mLastState, mLastPosition);
+        Timber.d("store player state on hide, state: %s, position: %s; saved: %s", playerData.playerState, playerData.position, playerData.needRestore);
+        return playerData;
     }
 
     /**
      * 恢复播放器状态
+     *
+     * @param playerData
      */
-    private void restorePlayerState() {
-        if (mPlayer == null || mLastState == PlayerState.IDLE)
+    private static void restorePlayerState(PlayerData playerData, IPlayer player) {
+        if (player == null || playerData == null)
             return;
 
-        final int lastPosition = mLastPosition;
+        int lastPosition = playerData.position;
+        final PlayerState lastState = playerData.playerState;
+        String lastUrl = playerData.url;
 
-        final PlayerState currentState = mPlayer.getPlayerState();
+        final PlayerState currentState = player.getPlayerState();
 
-        Timber.d("restore player state: preStat: %s; currentStat:%s", mLastState, currentState);
+        Timber.d("restore player state: preStat: %s; currentStat:%s", lastState, currentState);
 
-        if (mLastState == PlayerState.PREPARING) {
-            mPlayer.prepare(lastPosition);
-            Timber.d("prepare, when preparing");
-        } else if (mLastState == PlayerState.STARTED || mLastState == PlayerState.PAUSED) {
+        if (lastState == PlayerState.PREPARING || lastState == PlayerState.STARTED || lastState == PlayerState.PAUSED) {
             if (currentState == PlayerState.INITIALIZED) {
-                prepare(lastPosition);
-                Timber.d("prepare, when started or paused: %s", mLastState);
-            } else if (mPlayer.isCanPlayback()) {
-                Timber.d("resume and auto start");
-                mPlayer.resume(true);
+                player.prepare(lastPosition);
+                Timber.d("prepare");
+            } else if (player.isCanPlayback()) {
+                Timber.d("resume and start");
+                player.resume(true);
             } else if (currentState == PlayerState.STOPPED) {
-                mPlayer.prepare(mLastPosition);
+                player.prepare(lastPosition);
             } else if (currentState == PlayerState.RELEASED) {
-                mPlayer.reset();
-                if (!TextUtils.isEmpty(mLastUrl)) {
-                    mPlayer.setDataSource(mLastUrl);
-                    mPlayer.prepare(mLastPosition);
+                player.reset();
+                if (!TextUtils.isEmpty(lastUrl)) {
+                    startPlayer(player, lastUrl, lastPosition);
                 }
             } else if (currentState == PlayerState.IDLE) {
-                if (!TextUtils.isEmpty(mLastUrl)) {
-                    mPlayer.setDataSource(mLastUrl);
-                    mPlayer.prepare(mLastPosition);
+                if (!TextUtils.isEmpty(lastUrl)) {
+                    startPlayer(player, lastUrl, lastPosition);
                 }
             }
-        } else if (mLastState == PlayerState.ERROR) {
-            mLastPosition = mPlayer.getLastPosition();
-            mPlayer.reset();
-            if (!TextUtils.isEmpty(mLastUrl)) {
-                mPlayer.setDataSource(mLastUrl);
-                mPlayer.prepare(mLastPosition);
-            }
+        } else if (lastState == PlayerState.ERROR) {
+            restartPlayer(player, lastUrl);
         }
     }
 
-    private void prepare(int startPosition) {
-        mPlayer.prepare(startPosition);
+    private static void startPlayer(IPlayer player, String lastUrl, int startPosition) {
+        Timber.d("start, url: %s; position: %s;", lastUrl, startPosition);
+        player.setDataSource(lastUrl);
+        player.prepare(startPosition);
+    }
+
+    private static void restartPlayer(IPlayer player, String lastUrl) {
+        int startPosition = player.getLastPosition();
+        player.reset();
+        startPlayer(player, lastUrl, startPosition);
     }
 
     private void releasePlayer() {
@@ -294,43 +305,50 @@ public class LifecyclePlayer {
         mPlayer.addPlayerListener(mPlayerListener);
     }
 
-    private void onPrepared(int startPosition) {
-        if (mPlayer == null)
+    /**
+     * 调用时需要判断是否在前台
+     *
+     * @param player
+     * @param startPosition
+     * @param lastState
+     */
+    private static void onPrepared(IPlayer player, int startPosition, PlayerState lastState) {
+        if (player == null)
             return;
 
-        if (!isVisible)
-            return;
+        if (lastState == null) {
+            lastState = PlayerState.IDLE;
+        }
 
-        Timber.d("on prepared, preStat:%s, startPos:%s", mLastState, startPosition);
+//        if (!isVisible)
+//            return;
 
-        mLastPosition = 0;
+        Timber.d("on prepared, preStat:%s, startPos:%s", lastState, startPosition);
 
-        if (mLastState == PlayerState.PAUSED) {
+        if (lastState == PlayerState.PAUSED) {
             if (startPosition > 0) {
-                mPlayer.seekTo(startPosition, false);
+                player.seekTo(startPosition, false);
             } else {
-                mPlayer.start();
+                player.start();
             }
-        } else if (mLastState == PlayerState.STARTED) {
+        } else if (lastState == PlayerState.STARTED) {
             if (startPosition > 0) {
-                mPlayer.seekTo(startPosition, true);
+                player.seekTo(startPosition, true);
             } else {
-                mPlayer.start();
+                player.start();
             }
-        } else if (mLastState == PlayerState.STOPPED || mLastState == PlayerState.COMPLETE) {
-            Timber.d("do nothing");
-        } else if (mLastState == PlayerState.IDLE || mLastState == PlayerState.PREPARED) {
+        } else if (lastState == PlayerState.IDLE || lastState == PlayerState.PREPARED) {
             //第一次播放时（IDLE）或者退出时状态为prepared时。
             Timber.d("start");
-            mPlayer.start();
-        } else if (mLastState == PlayerState.ERROR) {
+            player.start();
+        } else if (lastState == PlayerState.ERROR) {
             if (startPosition > 0) {
-                mPlayer.seekTo(startPosition, true);
+                player.seekTo(startPosition, true);
             } else {
-                mPlayer.start();
+                player.start();
             }
         } else {
-            Timber.d("start on prepared");
+            Timber.d("do nothing: %s", lastState);
         }
     }
 

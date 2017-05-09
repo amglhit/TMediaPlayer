@@ -115,8 +115,12 @@ public class TMediaPlayer implements IPlayer {
         mMediaPlayer.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener() {
             @Override
             public void onSeekComplete(MediaPlayer mp) {
-                Timber.d("onSeekComplete");
+                Timber.d("onSeekComplete, %s", mStartWhenSeekComplete);
                 notifySeekComplete(mStartWhenSeekComplete);
+//                if (!mStartWhenSeekComplete) {
+//                    Timber.d("pause after seek");
+//                    pause();
+//                }
             }
         });
 
@@ -277,7 +281,11 @@ public class TMediaPlayer implements IPlayer {
         final PlayerState state = getPlayerState();
         switch (state) {
             case INITIALIZED:
-                prepare();
+                if (!fromStart && getLastPosition() > 0) {
+                    prepare(0);
+                } else {
+                    prepare(getLastPosition());
+                }
                 Timber.d("prepare");
                 break;
             case PAUSED:
@@ -300,7 +308,7 @@ public class TMediaPlayer implements IPlayer {
                     if (!fromStart && mStartPosition > 0) {
                         prepare(mStartPosition);
                     } else {
-                        prepare();
+                        prepare(0);
                     }
                     Timber.d("reload url: %s", mUrl);
                 } else {
@@ -503,7 +511,7 @@ public class TMediaPlayer implements IPlayer {
 
     @Override
     public boolean isPlaying() {
-        return mMediaPlayer.isPlaying();
+        return mMediaPlayer != null && mMediaPlayer.isPlaying();
     }
 
     @Override
