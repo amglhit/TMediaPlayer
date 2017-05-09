@@ -14,7 +14,7 @@ public class PlayerHelper {
      *
      * @return
      */
-    public static PlayerData savePlayerState(IPlayer player) {
+    public static PlayerData savePlayerState(IPlayer player, PlayerData previousPlayerData) {
         if (player == null) {
             return null;
         }
@@ -33,12 +33,15 @@ public class PlayerHelper {
             player.pause();
             playerData.position = player.getCurrentPosition();
             playerData.needRestore = true;
-        } else if (state == PlayerState.PAUSED) {
-            playerData.position = player.getCurrentPosition();
-            playerData.needRestore = true;
         } else if (player.isCanPlayback()) {
             playerData.position = player.getCurrentPosition();
             playerData.needRestore = true;
+        } else if (state == PlayerState.PREPARING) {
+            if (previousPlayerData != null && previousPlayerData.needRestore) {
+                playerData.position = previousPlayerData.position;
+                playerData.url = previousPlayerData.url;
+                playerData.needRestore = true;
+            }
         } else {
 
         }
@@ -131,10 +134,14 @@ public class PlayerHelper {
             } else {
                 player.start();
             }
-        } else if (preState == PlayerState.IDLE || preState == PlayerState.PREPARED) {
+        } else if (preState == PlayerState.IDLE || preState == PlayerState.PREPARED || preState == PlayerState.PREPARING) {
             //第一次播放时（IDLE）或者退出时状态为prepared时。
             Timber.d("start");
-            player.start();
+            if (startPosition > 0) {
+                player.seekTo(startPosition, true);
+            } else {
+                player.start();
+            }
         } else if (preState == PlayerState.ERROR) {
             if (startPosition > 0) {
                 player.seekTo(startPosition, true);
@@ -150,9 +157,10 @@ public class PlayerHelper {
         if (start) {
             Timber.d("start player on seek complete");
             player.start();
-        } else {
-            Timber.d("pause player on seek complete");
-            player.pause();
         }
+//        else {
+//            Timber.d("pause player on seek complete");
+//            player.pause();
+//        }
     }
 }

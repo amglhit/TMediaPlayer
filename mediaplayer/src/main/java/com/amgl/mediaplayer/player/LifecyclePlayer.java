@@ -65,7 +65,7 @@ public class LifecyclePlayer {
         Timber.d("on stop");
         isVisible = false;
         if (mPlayer != null) {
-            mPlayerData = PlayerHelper.savePlayerState(mPlayer);
+            mPlayerData = PlayerHelper.savePlayerState(mPlayer, mPlayerData);
             mPlayer.release();
         }
     }
