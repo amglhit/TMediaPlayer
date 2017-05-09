@@ -59,4 +59,8 @@ public interface IPlayer {
     PlayerState getPlayerState();
 
     void setDisplay(SurfaceHolder surfaceHolder);
+
+    int getLastPosition();
+
+    boolean isBuffering();
 }

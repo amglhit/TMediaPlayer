@@ -49,7 +49,11 @@ public class TMediaPlayer implements IPlayer {
     private int mBufferingPercent = 0;
     private boolean mIsBuffering = false;
 
+    private String mUrl = "";
+    private int mLastPosition = 0;
+
     private int mStartPosition = 0;
+    private boolean mStartWhenSeekComplete = false;
 
     private final List<IPlayerListener> mPlayerListeners = new ArrayList<>();
 
@@ -191,9 +195,20 @@ public class TMediaPlayer implements IPlayer {
         return mRestorePosition;
     }
 
+    @Override
+    public int getLastPosition() {
+        return mLastPosition;
+    }
+
+    @Override
+    public boolean isBuffering() {
+        return mIsBuffering;
+    }
+
     private void startPositionUpdate() {
         int position = getCurrentPosition();
         if (position >= 0) {
+            mLastPosition = position;
             notifyProgress(position);
         }
         Timber.v("update position: " + position);
@@ -204,8 +219,6 @@ public class TMediaPlayer implements IPlayer {
         Timber.d("stopPositionUpdate");
         mHandler.removeCallbacks(mRunnablePositionUpdate);
     }
-
-    private String mUrl = "";
 
     @Override
     public void setDataSource(String url) {
@@ -236,6 +249,7 @@ public class TMediaPlayer implements IPlayer {
     @Override
     public void prepare(int startPosition) {
         final PlayerState state = getPlayerState();
+        mLastPosition = 0;
         Timber.d("prepare, current: " + state);
         switch (state) {
             case STOPPED:
@@ -272,25 +286,32 @@ public class TMediaPlayer implements IPlayer {
                 Timber.d("resume");
                 break;
             case COMPLETE:
-                Timber.d("do nothing");
+                reset();
+                restart(true);
                 break;
             case RELEASED:
                 Timber.d("do nothing");
+                reset();
+                restart(true);
                 break;
             case IDLE:
                 if (!TextUtils.isEmpty(mUrl)) {
                     setDataSource(mUrl);
-                    prepare();
+                    if (!fromStart && mStartPosition > 0) {
+                        prepare(mStartPosition);
+                    } else {
+                        prepare();
+                    }
                     Timber.d("reload url: %s", mUrl);
                 } else {
-                    Timber.d("do nothing");
+                    Timber.w("do nothing");
                 }
+                Timber.w("do nothing");
                 break;
             case ERROR:
                 Timber.d("reset");
                 reset();
-                restart(true);
-//                prepare();
+                restart(false);
                 break;
         }
     }
@@ -410,9 +431,6 @@ public class TMediaPlayer implements IPlayer {
         setState(PlayerState.IDLE);
         notifyPlayerReset();
     }
-
-
-    private boolean mStartWhenSeekComplete = false;
 
     @Override
     public void seekTo(int position, boolean autoStart) {

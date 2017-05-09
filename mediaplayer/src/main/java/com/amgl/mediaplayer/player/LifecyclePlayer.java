@@ -1,5 +1,6 @@
 package com.amgl.mediaplayer.player;
 
+import android.text.TextUtils;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -17,6 +18,7 @@ public class LifecyclePlayer {
     private IPlayer mPlayer;
     private boolean isVisible = false;
     private int mLastPosition = 0;
+    private String mLastUrl = "";
 
     private SurfaceHolder mSurfaceHolder;
 
@@ -49,7 +51,7 @@ public class LifecyclePlayer {
             mSurfaceHolder = holder;
             if (mPlayer != null) {
                 mPlayer.setDisplay(mSurfaceHolder);
-                restorePlayerState();
+//                restorePlayerState();
             }
         }
 
@@ -68,8 +70,8 @@ public class LifecyclePlayer {
             mSurfaceHolder = null;
             if (mPlayer != null) {
                 mPlayer.setDisplay(null);
-                holder.setKeepScreenOn(false);
-                savePlayerState();
+//                holder.setKeepScreenOn(false);
+//                savePlayerState();
             }
         }
     };
@@ -87,11 +89,17 @@ public class LifecyclePlayer {
     public void onStart() {
         Timber.d("on start");
         isVisible = true;
+        restorePlayerState();
     }
 
     public void onStop() {
         Timber.d("on stop");
         isVisible = false;
+        if (mPlayer != null) {
+            savePlayerState();
+            mPlayer.stop();
+            mPlayer.release();
+        }
     }
 
     public void onHide() {
@@ -201,6 +209,8 @@ public class LifecyclePlayer {
 
         mLastState = state;
 
+        mLastUrl = mPlayer.getUrl();
+
         if (state == PlayerState.STARTED) {
             mPlayer.pause();
             mLastPosition = mPlayer.getCurrentPosition();
@@ -230,25 +240,35 @@ public class LifecyclePlayer {
         if (mLastState == PlayerState.PREPARING) {
             mPlayer.prepare(lastPosition);
             Timber.d("prepare, when preparing");
-        } else if (mLastState == PlayerState.STARTED) {
+        } else if (mLastState == PlayerState.STARTED || mLastState == PlayerState.PAUSED) {
             if (currentState == PlayerState.INITIALIZED) {
                 prepare(lastPosition);
-                Timber.d("prepare, when started");
+                Timber.d("prepare, when started or paused: %s", mLastState);
             } else if (mPlayer.isCanPlayback()) {
                 Timber.d("resume and auto start");
                 mPlayer.resume(true);
-            }
-        } else if (mLastState == PlayerState.PAUSED) {
-            if (currentState == PlayerState.INITIALIZED) {
-                prepare(lastPosition);
-                Timber.d("prepare, when init");
+            } else if (currentState == PlayerState.STOPPED) {
+                mPlayer.prepare(mLastPosition);
+            } else if (currentState == PlayerState.RELEASED) {
+                mPlayer.reset();
+                if (!TextUtils.isEmpty(mLastUrl)) {
+                    mPlayer.setDataSource(mLastUrl);
+                    mPlayer.prepare(mLastPosition);
+                }
+            } else if (currentState == PlayerState.IDLE) {
+                if (!TextUtils.isEmpty(mLastUrl)) {
+                    mPlayer.setDataSource(mLastUrl);
+                    mPlayer.prepare(mLastPosition);
+                }
             }
         } else if (mLastState == PlayerState.ERROR) {
-            if (mPlayer != null) {
-                mPlayer.reset();
+            mLastPosition = mPlayer.getLastPosition();
+            mPlayer.reset();
+            if (!TextUtils.isEmpty(mLastUrl)) {
+                mPlayer.setDataSource(mLastUrl);
+                mPlayer.prepare(mLastPosition);
             }
         }
-
     }
 
     private void prepare(int startPosition) {
@@ -303,9 +323,14 @@ public class LifecyclePlayer {
             //第一次播放时（IDLE）或者退出时状态为prepared时。
             Timber.d("start");
             mPlayer.start();
+        } else if (mLastState == PlayerState.ERROR) {
+            if (startPosition > 0) {
+                mPlayer.seekTo(startPosition, true);
+            } else {
+                mPlayer.start();
+            }
         } else {
             Timber.d("start on prepared");
-//            mPlayer.restart(false);
         }
     }
 
