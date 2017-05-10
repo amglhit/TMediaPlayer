@@ -8,15 +8,14 @@ import android.widget.TextView;
 
 import com.amgl.mediaplayer.controller.TPlayerController;
 import com.amgl.mediaplayer.player.IPlayer;
-import com.amgl.mediaplayer.player.LifecyclePlayer;
-import com.amgl.mediaplayer.player.TMediaPlayer;
+import com.amgl.mediaplayer.wrapper.LifecyclePlayer;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String URL = "http://101.28.249.57/v.cctv.com/flash/mp4video6/TMS/2011/01/05/cf752b1c12ce452b3040cab2f90bc265_h264818000nero_aac32-1.mp4?wsiphost=local";
+    public static final String URL = "http://101.28.249.57/v.cctv.com/flash/mp4video6/TMS/2011/01/05/cf752b1c12ce452b3040cab2f90bc265_h264818000nero_aac32-1.mp4?wsiphost=local";
 
     @BindView(R.id.surface_view)
     SurfaceView mSurfaceView;

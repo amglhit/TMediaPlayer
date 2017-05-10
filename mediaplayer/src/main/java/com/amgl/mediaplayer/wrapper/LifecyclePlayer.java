@@ -1,10 +1,13 @@
-package com.amgl.mediaplayer.player;
+package com.amgl.mediaplayer.wrapper;
 
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.amgl.mediaplayer.IOnPreparedListener;
 import com.amgl.mediaplayer.IPlayerListener;
+import com.amgl.mediaplayer.player.IPlayer;
+import com.amgl.mediaplayer.player.PlayerState;
+import com.amgl.mediaplayer.player.TMediaPlayer;
 
 import timber.log.Timber;
 
@@ -51,6 +54,16 @@ public class LifecyclePlayer {
         Timber.d("on start");
         isVisible = true;
 
+        restorePlayerState();
+    }
+
+    public void onStop() {
+        Timber.d("on stop");
+        isVisible = false;
+        stopPlayer();
+    }
+
+    public boolean restorePlayerState() {
         if (mPlayer != null && mPlayerData != null && (mPlayerData.playerState == PlayerState.RELEASED || mPlayerData.playerState == PlayerState.IDLE)) {
             Timber.d("reset player: %s", mPlayerData.playerState);
             mPlayer.reset();
@@ -58,12 +71,13 @@ public class LifecyclePlayer {
 
         if (mPlayer != null && mPlayerData != null && mPlayerData.needRestore) {
             PlayerHelper.restorePlayerState(mPlayerData, mPlayer);
+            return true;
         }
+
+        return false;
     }
 
-    public void onStop() {
-        Timber.d("on stop");
-        isVisible = false;
+    public void stopPlayer() {
         if (mPlayer != null) {
             mPlayerData = PlayerHelper.savePlayerState(mPlayer, mPlayerData);
             mPlayer.release();

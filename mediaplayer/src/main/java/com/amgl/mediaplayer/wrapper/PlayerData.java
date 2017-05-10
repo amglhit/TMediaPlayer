@@ -1,7 +1,9 @@
-package com.amgl.mediaplayer.player;
+package com.amgl.mediaplayer.wrapper;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import com.amgl.mediaplayer.player.PlayerState;
 
 /**
  * Created by 阿木 on 2017/5/9.
@@ -38,7 +40,7 @@ public class PlayerData implements Parcelable {
         this.playerState = tmpPlayerState == -1 ? null : PlayerState.values()[tmpPlayerState];
     }
 
-    public static final Parcelable.Creator<PlayerData> CREATOR = new Parcelable.Creator<PlayerData>() {
+    public static final Creator<PlayerData> CREATOR = new Creator<PlayerData>() {
         @Override
         public PlayerData createFromParcel(Parcel source) {
             return new PlayerData(source);

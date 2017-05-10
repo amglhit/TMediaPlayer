@@ -1,6 +1,10 @@
-package com.amgl.mediaplayer.player;
+package com.amgl.mediaplayer.wrapper;
 
+import android.os.Looper;
 import android.text.TextUtils;
+
+import com.amgl.mediaplayer.player.IPlayer;
+import com.amgl.mediaplayer.player.PlayerState;
 
 import timber.log.Timber;
 
@@ -97,9 +101,9 @@ public class PlayerHelper {
     }
 
     public static void restartPlayer(IPlayer player, String lastUrl) {
-        int startPosition = player.getLastPosition();
+//        int startPosition = player.getLastPosition();
         player.reset();
-        startPlayer(player, lastUrl, startPosition);
+        startPlayer(player, lastUrl, 0);
     }
 
     /**
@@ -162,5 +166,11 @@ public class PlayerHelper {
 //            Timber.d("pause player on seek complete");
 //            player.pause();
 //        }
+    }
+
+    public static void ensureNotMainThread() {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            throw new RuntimeException("cannot be in main thread");
+        }
     }
 }

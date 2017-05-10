@@ -10,8 +10,6 @@ import com.amgl.mediaplayer.IOnPreparedListener;
 import com.amgl.mediaplayer.IPlayerListener;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import timber.log.Timber;
 
@@ -40,27 +38,25 @@ import timber.log.Timber;
 public class TMediaPlayer implements IPlayer {
     private MediaPlayer mMediaPlayer;
 
-    private Handler mHandler;
+    private Handler mMainHandler;
 
     private PlayerState mPlayerState = PlayerState.IDLE;
 
     private int mRestorePosition = 0;
-
     private int mBufferingPercent = 0;
+
     private boolean mIsBuffering = false;
 
     private String mUrl = "";
     private int mLastPosition = 0;
-
     private int mStartPosition = 0;
     private boolean mStartWhenSeekComplete = false;
 
-    private final List<IPlayerListener> mPlayerListeners = new ArrayList<>();
-
-    private final List<IOnPreparedListener> mOnPreparedListeners = new ArrayList<>();
+    private PlayerNotifier mPlayerNotifier;
 
     public TMediaPlayer() {
-        mHandler = new Handler(Looper.getMainLooper());
+        mMainHandler = new Handler(Looper.getMainLooper());
+        mPlayerNotifier = new PlayerNotifier();
         initMediaPlayer();
     }
 
@@ -71,7 +67,7 @@ public class TMediaPlayer implements IPlayer {
             public void onPrepared(MediaPlayer mp) {
                 Timber.d("onPrepared");
                 setState(PlayerState.PREPARED);
-                notifyPrepareEnd(mStartPosition);
+                mPlayerNotifier.notifyPrepareEnd(mStartPosition);
             }
         });
 
@@ -89,7 +85,7 @@ public class TMediaPlayer implements IPlayer {
             public void onBufferingUpdate(MediaPlayer mp, int percent) {
                 Timber.v("onBufferingUpdate: " + percent);
                 mBufferingPercent = percent;
-                notifyBuffering(percent);
+                mPlayerNotifier.notifyBuffering(percent);
             }
         });
 
@@ -116,11 +112,7 @@ public class TMediaPlayer implements IPlayer {
             @Override
             public void onSeekComplete(MediaPlayer mp) {
                 Timber.d("onSeekComplete, %s", mStartWhenSeekComplete);
-                notifySeekComplete(mStartWhenSeekComplete);
-//                if (!mStartWhenSeekComplete) {
-//                    Timber.d("pause after seek");
-//                    pause();
-//                }
+                mPlayerNotifier.notifySeekComplete(mStartWhenSeekComplete);
             }
         });
 
@@ -134,30 +126,22 @@ public class TMediaPlayer implements IPlayer {
 
     @Override
     public void addOnPreparedListener(IOnPreparedListener listener) {
-        synchronized (mOnPreparedListeners) {
-            mOnPreparedListeners.add(listener);
-        }
+        mPlayerNotifier.addOnPreparedListener(listener);
     }
 
     @Override
     public void removeOnPreparedListener(IOnPreparedListener listener) {
-        synchronized (mOnPreparedListeners) {
-            mOnPreparedListeners.remove(listener);
-        }
+        mPlayerNotifier.removeOnPreparedListener(listener);
     }
 
     @Override
     public void addPlayerListener(IPlayerListener playerListener) {
-        synchronized (mPlayerListeners) {
-            mPlayerListeners.add(playerListener);
-        }
+        mPlayerNotifier.addPlayerListener(playerListener);
     }
 
     @Override
     public void removePlayerListener(IPlayerListener playerListener) {
-        synchronized (mPlayerListeners) {
-            mPlayerListeners.remove(playerListener);
-        }
+        mPlayerNotifier.removePlayerListener(playerListener);
     }
 
     private synchronized void setState(PlayerState playerState) {
@@ -165,19 +149,19 @@ public class TMediaPlayer implements IPlayer {
         mPlayerState = playerState;
         switch (playerState) {
             case PREPARING:
-                notifyPrepareStart();
+                mPlayerNotifier.notifyPrepareStart();
                 break;
             case STARTED:
-                notifyPlayStart();
+                mPlayerNotifier.notifyPlayStart();
                 break;
             case STOPPED:
-                notifyPlayStop();
+                mPlayerNotifier.notifyPlayStop();
                 break;
             case ERROR:
-                notifyError();
+                mPlayerNotifier.notifyError();
                 break;
             case COMPLETE:
-                notifyPlayComplete();
+                mPlayerNotifier.notifyPlayComplete();
                 break;
         }
     }
@@ -213,15 +197,15 @@ public class TMediaPlayer implements IPlayer {
         int position = getCurrentPosition();
         if (position >= 0) {
             mLastPosition = position;
-            notifyProgress(position);
+            mPlayerNotifier.notifyProgress(position);
         }
         Timber.v("update position: " + position);
-        mHandler.postDelayed(mRunnablePositionUpdate, 1000);
+        mMainHandler.postDelayed(mRunnablePositionUpdate, 1000);
     }
 
     private void stopPositionUpdate() {
         Timber.d("stopPositionUpdate");
-        mHandler.removeCallbacks(mRunnablePositionUpdate);
+        mMainHandler.removeCallbacks(mRunnablePositionUpdate);
     }
 
     @Override
@@ -373,7 +357,7 @@ public class TMediaPlayer implements IPlayer {
             mMediaPlayer.setScreenOnWhilePlaying(false);
             mMediaPlayer.pause();
             setState(PlayerState.PAUSED);
-            notifyPlayPaused();
+            mPlayerNotifier.notifyPlayPaused();
         } else {
             Timber.w("pause, illegal state: " + state);
         }
@@ -437,7 +421,7 @@ public class TMediaPlayer implements IPlayer {
 
         stopPositionUpdate();
         setState(PlayerState.IDLE);
-        notifyPlayerReset();
+        mPlayerNotifier.notifyPlayerReset();
     }
 
     @Override
@@ -521,7 +505,7 @@ public class TMediaPlayer implements IPlayer {
 
     @Override
     public int getBufferingPercent() {
-        return 0;
+        return mBufferingPercent;
     }
 
     /**
@@ -554,17 +538,17 @@ public class TMediaPlayer implements IPlayer {
                 break;
             case MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START:
                 Timber.d("onInfo, MEDIA_INFO_VIDEO_RENDERING_START");
-                notifyRenderingStart();
+                mPlayerNotifier.notifyRenderingStart();
                 break;
             case MediaPlayer.MEDIA_INFO_BUFFERING_START:
                 Timber.d("onInfo, MEDIA_INFO_BUFFERING_START");
                 mIsBuffering = true;
-                notifyBufferingStart();
+                mPlayerNotifier.notifyBufferingStart();
                 break;
             case MediaPlayer.MEDIA_INFO_BUFFERING_END:
                 Timber.d("onInfo, MEDIA_INFO_BUFFERING_END");
                 mIsBuffering = false;
-                notifyBufferingEnd();
+                mPlayerNotifier.notifyBufferingEnd();
                 break;
 //            case MediaPlayer.MEDIA_INFO_NETWORK_BANDWIDTH:
 //                Timber.d("onInfo, MEDIA_INFO_NETWORK_BANDWIDTH: %s", extra);
@@ -594,186 +578,4 @@ public class TMediaPlayer implements IPlayer {
             startPositionUpdate();
         }
     };
-
-    private void notifyPrepareStart() {
-        synchronized (mOnPreparedListeners) {
-            for (IOnPreparedListener listener : mOnPreparedListeners) {
-                try {
-                    listener.onPrepareStart();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Timber.w(e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void notifyPrepareEnd(int position) {
-        synchronized (mOnPreparedListeners) {
-            for (IOnPreparedListener listener : mOnPreparedListeners) {
-                try {
-                    listener.onPrepared(position);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Timber.w(e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void notifyBufferingStart() {
-        synchronized (mPlayerListeners) {
-            for (IPlayerListener listener : mPlayerListeners) {
-                try {
-                    listener.onBufferingStart();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Timber.w(e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void notifyBufferingEnd() {
-        synchronized (mPlayerListeners) {
-            for (IPlayerListener listener : mPlayerListeners) {
-                try {
-                    listener.onBufferingEnd();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Timber.w(e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void notifyPlayStart() {
-        synchronized (mPlayerListeners) {
-            for (IPlayerListener listener : mPlayerListeners) {
-                try {
-                    listener.onStart();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Timber.w(e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void notifyPlayStop() {
-        synchronized (mPlayerListeners) {
-            for (IPlayerListener listener : mPlayerListeners) {
-                try {
-                    listener.onStop();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Timber.w(e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void notifyPlayPaused() {
-        synchronized (mPlayerListeners) {
-            for (IPlayerListener listener : mPlayerListeners) {
-                try {
-                    listener.onPaused();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Timber.w(e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void notifyPlayComplete() {
-        synchronized (mPlayerListeners) {
-            for (IPlayerListener listener : mPlayerListeners) {
-                try {
-                    listener.onComplete();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Timber.w(e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void notifyError() {
-        synchronized (mPlayerListeners) {
-            for (IPlayerListener listener : mPlayerListeners) {
-                try {
-                    listener.onError();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Timber.w(e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void notifySeekComplete(boolean start) {
-        synchronized (mPlayerListeners) {
-            for (IPlayerListener listener : mPlayerListeners) {
-                try {
-                    listener.onSeekComplete(start);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Timber.w(e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void notifyRenderingStart() {
-        synchronized (mPlayerListeners) {
-            for (IPlayerListener listener : mPlayerListeners) {
-                try {
-                    listener.onFirstFrameAppeared();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Timber.w(e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void notifyPlayerReset() {
-        synchronized (mPlayerListeners) {
-            for (IPlayerListener listener : mPlayerListeners) {
-                try {
-                    listener.onReset();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Timber.w(e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void notifyProgress(int progress) {
-        synchronized (mPlayerListeners) {
-            for (IPlayerListener listener : mPlayerListeners) {
-                try {
-                    listener.onProgress(progress);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Timber.w(e.getMessage());
-                }
-            }
-        }
-    }
-
-    private void notifyBuffering(int percent) {
-        synchronized (mPlayerListeners) {
-            for (IPlayerListener listener : mPlayerListeners) {
-                try {
-                    listener.onBuffering(percent);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Timber.w(e.getMessage());
-                }
-            }
-        }
-    }
 }
