@@ -1,4 +1,4 @@
-package com.amgl.mediaplayer;
+package com.amgl.mediaplayer.listener;
 
 /**
  * Created by 阿木 on 2017/5/5.

@@ -12,12 +12,11 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.amgl.mediaplayer.IOnPreparedListener;
-import com.amgl.mediaplayer.IPlayerListener;
+import com.amgl.mediaplayer.listener.IOnPreparedListener;
+import com.amgl.mediaplayer.listener.IPlayerListener;
 import com.amgl.mediaplayer.R;
 import com.amgl.mediaplayer.player.IPlayer;
 import com.amgl.mediaplayer.player.PlayerState;
-import com.amgl.mediaplayer.player.TMediaPlayer;
 
 import timber.log.Timber;
 

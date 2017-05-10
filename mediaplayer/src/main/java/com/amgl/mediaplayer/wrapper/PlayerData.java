@@ -10,10 +10,10 @@ import com.amgl.mediaplayer.player.PlayerState;
  */
 
 public class PlayerData implements Parcelable {
-    boolean needRestore = false;
-    int position = 0;
-    String url;
-    PlayerState playerState = PlayerState.IDLE;
+    public boolean needRestore = false;
+    public int position = 0;
+    public String url;
+    public PlayerState playerState = PlayerState.IDLE;
 
 
     @Override

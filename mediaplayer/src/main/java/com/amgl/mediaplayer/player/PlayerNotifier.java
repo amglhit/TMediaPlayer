@@ -3,8 +3,8 @@ package com.amgl.mediaplayer.player;
 import android.os.Handler;
 import android.os.Looper;
 
-import com.amgl.mediaplayer.IOnPreparedListener;
-import com.amgl.mediaplayer.IPlayerListener;
+import com.amgl.mediaplayer.listener.IOnPreparedListener;
+import com.amgl.mediaplayer.listener.IPlayerListener;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -3,11 +3,13 @@ package com.amgl.viewscrollhelper;
 import android.graphics.Rect;
 import android.view.View;
 
+import timber.log.Timber;
+
 /**
  * Created by 阿木 on 2017/5/10.
  */
 
-public class ItemViewHelper {
+public class ItemVisibleHelper {
     /**
      * view可见部分百分比
      *
@@ -17,7 +19,7 @@ public class ItemViewHelper {
     public static int getVisiblePercentage(View itemView) {
         int percentage = 0;
         if (itemView == null)
-            return percentage;
+            return -1;
         final int height = itemView.getHeight();
 
         final Rect rect = new Rect();
@@ -27,7 +29,7 @@ public class ItemViewHelper {
         final int bottom = rect.bottom;
 
         if (top > 0) {
-            percentage = (height - top) * 100 / height;
+            percentage = (bottom - top) * 100 / height;
         } else if (bottom > 0 && bottom < height) {
             percentage = bottom * 100 / height;
         } else {

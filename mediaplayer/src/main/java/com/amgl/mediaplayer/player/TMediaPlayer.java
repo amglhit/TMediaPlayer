@@ -6,8 +6,8 @@ import android.os.Looper;
 import android.text.TextUtils;
 import android.view.SurfaceHolder;
 
-import com.amgl.mediaplayer.IOnPreparedListener;
-import com.amgl.mediaplayer.IPlayerListener;
+import com.amgl.mediaplayer.listener.IOnPreparedListener;
+import com.amgl.mediaplayer.listener.IPlayerListener;
 
 import java.io.IOException;
 

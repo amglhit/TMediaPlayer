@@ -1,22 +1,24 @@
-package com.amgl.mediaplayer.wrapper;
+package com.amgl.mediaplayer;
 
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-import com.amgl.mediaplayer.IOnPreparedListener;
-import com.amgl.mediaplayer.IPlayerListener;
+import com.amgl.mediaplayer.listener.IOnPreparedListener;
+import com.amgl.mediaplayer.listener.IPlayerListener;
 import com.amgl.mediaplayer.player.IPlayer;
 import com.amgl.mediaplayer.player.PlayerState;
 import com.amgl.mediaplayer.player.TMediaPlayer;
+import com.amgl.mediaplayer.wrapper.PlayerData;
+import com.amgl.mediaplayer.wrapper.PlayerHelper;
 
 import timber.log.Timber;
 
 /**
- * 生命周期调用的Player
+ * 视频播放管理，生命周期调用，暂存和恢复播放状态
  * Created by 阿木 on 2017/5/5.
  */
 
-public class LifecyclePlayer {
+public class VideoPlayerManager {
     private IPlayer mPlayer;
     private boolean isVisible = false;
 

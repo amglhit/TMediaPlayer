@@ -63,16 +63,19 @@ public class ScrollDirectionDetector {
 
     private void onScrollUp() {
         if (ScrollDirection.UP != mOldScrollDirection) {
+            mOldScrollDirection = ScrollDirection.UP;
             mScrollDirectionChangeListener.onScrollDirectionChanged(ScrollDirection.UP);
         }
-
-        mOldScrollDirection = ScrollDirection.UP;
     }
 
     private void onScrollDown() {
         if (ScrollDirection.DOWN != mOldScrollDirection) {
+            mOldScrollDirection = ScrollDirection.DOWN;
             mScrollDirectionChangeListener.onScrollDirectionChanged(ScrollDirection.DOWN);
         }
-        mOldScrollDirection = ScrollDirection.DOWN;
+    }
+
+    public ScrollDirection getScrollDirection() {
+        return mOldScrollDirection;
     }
 }

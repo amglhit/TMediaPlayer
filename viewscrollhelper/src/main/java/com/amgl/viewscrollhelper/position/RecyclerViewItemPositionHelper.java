@@ -19,7 +19,9 @@ public class RecyclerViewItemPositionHelper implements IItemPositionHelper {
 
     @Override
     public View getChildAt(int position) {
-        return mLayoutManager.getChildAt(position);
+        int firstIndex = getFirstVisiblePosition();
+        int index = position - firstIndex;
+        return mRecyclerView.getChildAt(index);
     }
 
     @Override

@@ -17,7 +17,7 @@ import timber.log.Timber;
  * Created by 阿木 on 2017/5/9.
  */
 
-public class SampleVideoRVAdapter extends BaseRVAdapter<String> {
+public class VideoRVAdapter extends BaseRVAdapter<String> {
     @Override
     public VideoViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView = createItemView(R.layout.item_video, parent);
@@ -61,6 +61,14 @@ public class SampleVideoRVAdapter extends BaseRVAdapter<String> {
                     mVideoListListener.onClick(mPosition);
                 }
             }
+        }
+
+        public void onActivate() {
+            Timber.d("on activate: %s", mPosition);
+        }
+
+        public void onDeactivate() {
+            Timber.d("on deactivate: %s", mPosition);
         }
 
         private SurfaceHolder.Callback2 mCallback2 = new SurfaceHolder.Callback2() {

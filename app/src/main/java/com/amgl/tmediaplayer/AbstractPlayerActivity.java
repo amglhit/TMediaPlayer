@@ -6,7 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.SurfaceHolder;
 
 import com.amgl.mediaplayer.player.IPlayer;
-import com.amgl.mediaplayer.wrapper.LifecyclePlayer;
+import com.amgl.mediaplayer.VideoPlayerManager;
 import com.amgl.mediaplayer.wrapper.PlayerHelper;
 
 /**
@@ -14,13 +14,13 @@ import com.amgl.mediaplayer.wrapper.PlayerHelper;
  */
 
 public abstract class AbstractPlayerActivity extends AppCompatActivity {
-    private LifecyclePlayer mLifecycleWrapper;
+    private VideoPlayerManager mLifecycleWrapper;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mLifecycleWrapper = new LifecyclePlayer();
+        mLifecycleWrapper = new VideoPlayerManager();
         mLifecycleWrapper.onCreate();
     }
 

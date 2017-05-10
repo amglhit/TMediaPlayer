@@ -6,7 +6,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-import com.amgl.viewscrollhelper.RecyclerScrollListener;
+import com.amgl.viewscrollhelper.RecyclerViewItemActivateListener;
 
 import java.util.Arrays;
 
@@ -21,7 +21,7 @@ public class ListActivity extends AbstractPlayerActivity {
     RecyclerView mRecyclerView;
 
     private LinearLayoutManager mLayoutManager;
-    private SampleVideoRVAdapter mRVAdapter;
+    private VideoRVAdapter mRVAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,7 +32,7 @@ public class ListActivity extends AbstractPlayerActivity {
         mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
 
-        mRVAdapter = new SampleVideoRVAdapter();
+        mRVAdapter = new VideoRVAdapter();
         mRecyclerView.setAdapter(mRVAdapter);
 
         mRVAdapter.setDataList(Arrays.asList(URLS));
@@ -40,10 +40,22 @@ public class ListActivity extends AbstractPlayerActivity {
 
         mRVAdapter.setVideoListListener(mVideoListListener);
 
-        mRecyclerView.addOnScrollListener(new RecyclerScrollListener(this, mRecyclerView, mLayoutManager));
+        mRecyclerView.addOnScrollListener(new RecyclerViewItemActivateListener(this, mRecyclerView, mLayoutManager, mItemActivateListener));
     }
 
-    private SampleVideoRVAdapter.IVideoListListener mVideoListListener = new SampleVideoRVAdapter.IVideoListListener() {
+    private RecyclerViewItemActivateListener.ItemActivateListener mItemActivateListener = new RecyclerViewItemActivateListener.ItemActivateListener() {
+        @Override
+        public void onActive(int position) {
+            Timber.d("activate :%s", position);
+        }
+
+        @Override
+        public void onDeactivate(int position) {
+            Timber.d("deactivate :%s", position);
+        }
+    };
+
+    private VideoRVAdapter.IVideoListListener mVideoListListener = new VideoRVAdapter.IVideoListListener() {
         @Override
         public void onBind(int position, SurfaceView surfaceView, String url) {
             Timber.d("on bind: %s", position);

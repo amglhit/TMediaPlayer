@@ -8,7 +8,7 @@ import android.widget.TextView;
 
 import com.amgl.mediaplayer.controller.TPlayerController;
 import com.amgl.mediaplayer.player.IPlayer;
-import com.amgl.mediaplayer.wrapper.LifecyclePlayer;
+import com.amgl.mediaplayer.VideoPlayerManager;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
     private IPlayer mMediaPlayer;
 
-    private LifecyclePlayer mLifecycleWrapper;
+    private VideoPlayerManager mLifecycleWrapper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
         ButterKnife.bind(this);
 
-        mLifecycleWrapper = new LifecyclePlayer();
+        mLifecycleWrapper = new VideoPlayerManager();
         mLifecycleWrapper.onCreate();
 
         mMediaPlayer = mLifecycleWrapper.getPlayer();

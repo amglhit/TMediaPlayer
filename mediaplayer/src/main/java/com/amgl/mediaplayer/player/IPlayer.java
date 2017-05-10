@@ -3,9 +3,8 @@ package com.amgl.mediaplayer.player;
 
 import android.view.SurfaceHolder;
 
-import com.amgl.mediaplayer.IOnPreparedListener;
-import com.amgl.mediaplayer.IPlayerListener;
-import com.amgl.mediaplayer.player.PlayerState;
+import com.amgl.mediaplayer.listener.IOnPreparedListener;
+import com.amgl.mediaplayer.listener.IPlayerListener;
 
 /**
  * Created by 阿木 on 2017/5/3.
