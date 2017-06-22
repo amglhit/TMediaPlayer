@@ -1,5 +1,6 @@
 package com.amgl.tmediaplayer;
 
+import android.net.SSLCertificateSocketFactory;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.SurfaceView;
@@ -10,12 +11,32 @@ import com.amgl.mediaplayer.controller.TPlayerController;
 import com.amgl.mediaplayer.player.IPlayer;
 import com.amgl.mediaplayer.VideoPlayerManager;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
-    public static final String URL = "http://101.28.249.57/v.cctv.com/flash/mp4video6/TMS/2011/01/05/cf752b1c12ce452b3040cab2f90bc265_h264818000nero_aac32-1.mp4?wsiphost=local";
+    public static final String URL = "https://xiaomor.com/demo/test.mp4";//http://101.28.249.57/v.cctv.com/flash/mp4video6/TMS/2011/01/05/cf752b1c12ce452b3040cab2f90bc265_h264818000nero_aac32-1.mp4?wsiphost=local";
 
     @BindView(R.id.surface_view)
     SurfaceView mSurfaceView;
@@ -74,6 +95,62 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.btn_init)
     void init() {
+//        try {
+//            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+//            trustStore.load(null, null);
+//            //Create a TrustManager that trusts the CAs in our keyStore
+//            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+//            trustManagerFactory.init(trustStore);
+//
+//            //Create an SSLContext that uses our TrustManager
+//            SSLContext sslContext = SSLContext.getInstance("TLS");
+//            sslContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
+//
+//            SSLSocketFactory sf = sslContext.getSocketFactory();
+//            HttpsURLConnection.setDefaultSSLSocketFactory(sf);
+//
+//            HostnameVerifier hostnameVerifier = org.apache.http.conn.ssl.SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
+//            HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
+//        } catch (KeyStoreException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//        } catch (CertificateException e) {
+//            e.printStackTrace();
+//        } catch (KeyManagementException e) {
+//            e.printStackTrace();
+//        }
+
+        TrustManager[] trustAllCerts = new TrustManager[]
+                {new X509TrustManager() {
+                    public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                        return null;
+                    }
+
+                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                    }
+
+                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                    }
+                }
+                };
+
+        try {
+            SSLContext sc = SSLContext.getInstance("SSL"); // "TLS" "SSL"
+            sc.init(null, trustAllCerts, null);
+            // sc.init( null, trustAllCerts, new java.security.SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+            HttpsURLConnection.setDefaultHostnameVerifier(
+                    new HostnameVerifier() {
+                        public boolean verify(String hostname, SSLSession session) {
+                            return true;
+                        }
+                    });
+        } catch (Exception e) {
+            Timber.e(e);
+        }
         mMediaPlayer.setDataSource(URL);
     }
 
