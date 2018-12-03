@@ -21,6 +21,17 @@
             </intent-filter>
         </activity>
         <activity android:name=".ListActivity">
+
+        </activity>
+
+        <service
+            android:name=".service.VideoPlayService"
+            android:enabled="true"
+            android:exported="false">
+        </service>
+
+        <activity android:name=".play.DetailActivity">
+
         </activity>
     </application>
 

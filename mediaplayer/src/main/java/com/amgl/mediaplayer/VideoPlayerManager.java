@@ -33,12 +33,11 @@ public class VideoPlayerManager {
         }
 
         mSurfaceHolder = surfaceView.getHolder();
+        mSurfaceHolder.addCallback(mCallback);
 
         if (mPlayer != null) {
             mPlayer.setDisplay(surfaceView.getHolder());
         }
-
-        mSurfaceHolder.addCallback(mCallback);
     }
 
 
@@ -55,7 +54,6 @@ public class VideoPlayerManager {
     public void onStart() {
         Timber.d("on start");
         isVisible = true;
-
         restorePlayerState();
     }
 
@@ -92,6 +90,7 @@ public class VideoPlayerManager {
             mPlayer.removePlayerListener(mPlayerListener);
             mPlayer.removeOnPreparedListener(mOnPreparedListener);
             mPlayer = null;
+            mPlayerData = null;
         }
     }
 

@@ -1,7 +1,9 @@
 package com.amgl.tmediaplayer;
 
+import android.graphics.SurfaceTexture;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -34,29 +36,41 @@ public class VideoRVAdapter extends BaseRVAdapter<String> {
     public class VideoViewHolder extends BaseViewHolder<String> implements View.OnClickListener {
         @BindView(R.id.text_title)
         TextView mTextView;
-        @BindView(R.id.surface_view)
-        SurfaceView mSurfaceView;
+        @BindView(R.id.texture_view)
+        TextureView mTextureView;
+
+        SurfaceTexture mSurfaceTexture;
 
         public VideoViewHolder(View itemView) {
             super(itemView);
             ButterKnife.bind(this, itemView);
+            mSurfaceTexture = null;
+            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+
             itemView.setOnClickListener(this);
-            mSurfaceView.getHolder().addCallback(mCallback2);
+            mTextureView.setOnClickListener(this);
+
+//            mSurfaceView.getHolder().addCallback(mCallback2);
         }
 
         @Override
         protected void onBind() {
             Timber.d("onBind: %s, %s", mPosition, mData);
             mTextView.setText("po " + mPosition);
-            if (mVideoListListener != null) {
-                mVideoListListener.onBind(mPosition, mSurfaceView, mData);
-            }
+//            if (mVideoListListener != null) {
+//                mVideoListListener.onBind(mPosition, mSurfaceView, mData);
+//            }
         }
 
         @Override
         public void onClick(View v) {
-            if (v.getId() == R.id.surface_view) {
-                Timber.d("surface view click: %s", mPosition);
+            if (v.getId() == R.id.texture_view) {
+                Timber.d("texture view click: %s", mPosition);
+                if (mVideoListListener != null && mSurfaceTexture != null) {
+                    mVideoListListener.onClick(mPosition, mTextureView);
+                }
+            } else {
+                Timber.d("item view click");
                 if (mVideoListListener != null) {
                     mVideoListListener.onClick(mPosition);
                 }
@@ -97,12 +111,42 @@ public class VideoRVAdapter extends BaseRVAdapter<String> {
                 }
             }
         };
+
+        private TextureView.SurfaceTextureListener mSurfaceTextureListener = new TextureView.SurfaceTextureListener() {
+            @Override
+            public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
+                Timber.d("on surface texture available %s: %s, %s", mPosition, i, i1);
+                mSurfaceTexture = surfaceTexture;
+//                if (mVideoListListener != null) {
+//                    mVideoListListener.onVisible(holder, mPosition, mData);
+//                }
+            }
+
+            @Override
+            public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {
+                mSurfaceTexture = surfaceTexture;
+                Timber.d("on surface texture size changed %s: %s, %s", mPosition, i, i1);
+            }
+
+            @Override
+            public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
+                mSurfaceTexture = null;
+                Timber.d("on surface texture destroyed: %s", mPosition);
+                return false;
+            }
+
+            @Override
+            public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
+            }
+        };
     }
 
     public interface IVideoListListener {
         void onBind(int position, SurfaceView surfaceView, String url);
 
         void onUnBind(int position, SurfaceView surfaceView);
+
+        void onClick(int position, TextureView textureView);
 
         void onClick(int position);
 

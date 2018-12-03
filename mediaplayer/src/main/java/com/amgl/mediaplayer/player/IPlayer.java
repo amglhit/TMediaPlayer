@@ -1,6 +1,7 @@
 package com.amgl.mediaplayer.player;
 
 
+import android.graphics.SurfaceTexture;
 import android.view.SurfaceHolder;
 
 import com.amgl.mediaplayer.listener.IOnPreparedListener;
@@ -58,6 +59,8 @@ public interface IPlayer {
     PlayerState getPlayerState();
 
     void setDisplay(SurfaceHolder surfaceHolder);
+
+    void setSurface(SurfaceTexture surfaceTexture);
 
     int getLastPosition();
 

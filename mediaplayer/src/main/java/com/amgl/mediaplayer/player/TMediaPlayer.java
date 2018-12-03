@@ -1,9 +1,11 @@
 package com.amgl.mediaplayer.player;
 
+import android.graphics.SurfaceTexture;
 import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 
 import com.amgl.mediaplayer.listener.IOnPreparedListener;
@@ -527,6 +529,22 @@ public class TMediaPlayer implements IPlayer {
             mMediaPlayer.setDisplay(null);
         }
     }
+
+    @Override
+    public void setSurface(SurfaceTexture surfaceTexture) {
+        if (surfaceTexture != null) {
+
+            final PlayerState state = getPlayerState();
+            if (state == PlayerState.RELEASED) {
+                Timber.w("set display, illegal state: %s", state);
+                return;
+            }
+            mMediaPlayer.setSurface(new Surface(surfaceTexture));
+        } else {
+            mMediaPlayer.setSurface(null);
+        }
+    }
+
 
     private void onMediaPlayerInfo(int what, int extra) {
         switch (what) {
